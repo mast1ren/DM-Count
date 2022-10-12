@@ -8,7 +8,7 @@ from torch.utils.data.dataloader import default_collate
 import numpy as np
 from datetime import datetime
 
-from datasets.crowd import Crowd_qnrf, Crowd_nwpu, Crowd_sh
+from datasets.crowd import Crowd_dronebird, Crowd_qnrf, Crowd_nwpu, Crowd_sh
 from models import vgg19
 from losses.ot_loss import OT_Loss
 from utils.pytorch_utils import Save_Handle, AverageMeter
@@ -61,9 +61,15 @@ class Trainer(object):
                              'val': Crowd_sh(os.path.join(args.data_dir, 'test_data'),
                                              args.crop_size, downsample_ratio, 'val'),
                              }
+        elif args.dataset.lower() == 'dronebird':
+            self.datasets = {'train': Crowd_dronebird(os.path.join(args.data_dir, 'train'),
+                                               args.crop_size, downsample_ratio, 'train'),
+                             'val': Crowd_dronebird(os.path.join(args.data_dir, 'val'),
+                                             args.crop_size, downsample_ratio, 'val'),
+                             }
         else:
             raise NotImplementedError
-
+        self.device = torch.device("cpu")
         self.dataloaders = {x: DataLoader(self.datasets[x],
                                           collate_fn=(train_collate
                                                       if x == 'train' else default_collate),

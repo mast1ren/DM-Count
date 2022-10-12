@@ -5,9 +5,9 @@ import argparse
 parser = argparse.ArgumentParser(description='Preprocess')
 parser.add_argument('--dataset', default='qnrf',
                     help='dataset name, only support qnrf and nwpu')
-parser.add_argument('--input-dataset-path', default='data/QNRF',
+parser.add_argument('--input-dataset-path', default='../../ds/dronebird',
                     help='original data directory')
-parser.add_argument('--output-dataset-path', default='data/QNRF-Train-Val-Test',
+parser.add_argument('--output-dataset-path', default='../data',
                     help='processed data directory')
 args = parser.parse_args()
 

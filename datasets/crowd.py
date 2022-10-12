@@ -8,6 +8,7 @@ from torchvision import transforms
 import random
 import numpy as np
 import scipy.io as sio
+import json
 
 
 def random_crop(im_h, im_w, crop_h, crop_w):
@@ -28,13 +29,15 @@ def gen_discrete_map(im_height, im_width, points):
     num_gt = points.shape[0]
     if num_gt == 0:
         return discrete_map
-    
+
     # fast create discrete map
     points_np = np.array(points).round().astype(int)
     p_h = np.minimum(points_np[:, 1], np.array([h-1]*num_gt).astype(int))
     p_w = np.minimum(points_np[:, 0], np.array([w-1]*num_gt).astype(int))
-    p_index = torch.from_numpy(p_h* im_width + p_w)
-    discrete_map = torch.zeros(im_width * im_height).scatter_add_(0, index=p_index, src=torch.ones(im_width*im_height)).view(im_height, im_width).numpy()
+    p_index = torch.from_numpy(p_h * im_width + p_w).long()
+    # print(p_index)
+    discrete_map = torch.zeros(im_width * im_height).scatter_add_(
+        0, index=p_index, src=torch.ones(im_width*im_height)).view(im_height, im_width).numpy()
 
     ''' slow method
     for p in points:
@@ -83,7 +86,8 @@ class Base(data.Dataset):
         gt_discrete = gen_discrete_map(h, w, keypoints)
         down_w = w // self.d_ratio
         down_h = h // self.d_ratio
-        gt_discrete = gt_discrete.reshape([down_h, self.d_ratio, down_w, self.d_ratio]).sum(axis=(1, 3))
+        gt_discrete = gt_discrete.reshape(
+            [down_h, self.d_ratio, down_w, self.d_ratio]).sum(axis=(1, 3))
         assert np.sum(gt_discrete) == len(keypoints)
 
         if len(keypoints) > 0:
@@ -99,6 +103,38 @@ class Base(data.Dataset):
 
         return self.trans(img), torch.from_numpy(keypoints.copy()).float(), torch.from_numpy(
             gt_discrete.copy()).float()
+
+
+class Crowd_dronebird(Base):
+    def __init__(self, root_path, crop_size, downsample_ratio=8, method='train'):
+        super().__init__(root_path, crop_size, downsample_ratio)
+        self.method = method
+        self.im_list = sorted(glob(os.path.join(self.root_path, '*.jpg')))
+        # with open(os.path.join(self.root_path, '{}.json'.format(self.method))) as f:
+        #     self.im_list = json.load(f)
+        print('number of img: {}'.format(len(self.im_list)))
+        if method not in ['train', 'val', 'test']:
+            raise Exception('method must be train, val or test')
+
+    def __len__(self):
+        return len(self.im_list)
+
+    def __getitem__(self, item):
+        img_path = self.im_list[item]
+        gd_path = img_path.replace('jpg', 'npy')
+        img = Image.open(img_path).convert('RGB')
+        if self.method == 'train':
+            keypoints = np.load(gd_path)
+            return self.train_transform(img, keypoints)
+        elif self.method == 'val':
+            keypoints = np.load(gd_path)
+            img = self.trans(img)
+            name = os.path.basename(img_path).split('.')[0]
+            return img, len(keypoints), name
+        elif self.method == 'test':
+            img = self.trans(img)
+            name = os.path.basename(img_path).split('.')[0]
+            return img, name
 
 
 class Crowd_qnrf(Base):
@@ -171,7 +207,8 @@ class Crowd_sh(Base):
         if method not in ['train', 'val']:
             raise Exception("not implement")
 
-        self.im_list = sorted(glob(os.path.join(self.root_path, 'images', '*.jpg')))
+        self.im_list = sorted(
+            glob(os.path.join(self.root_path, 'images', '*.jpg')))
         print('number of img: {}'.format(len(self.im_list)))
 
     def __len__(self):
@@ -180,7 +217,8 @@ class Crowd_sh(Base):
     def __getitem__(self, item):
         img_path = self.im_list[item]
         name = os.path.basename(img_path).split('.')[0]
-        gd_path = os.path.join(self.root_path, 'ground-truth', 'GT_{}.mat'.format(name))
+        gd_path = os.path.join(
+            self.root_path, 'ground-truth', 'GT_{}.mat'.format(name))
         img = Image.open(img_path).convert('RGB')
         keypoints = sio.loadmat(gd_path)['image_info'][0][0][0][0][0]
 
@@ -216,7 +254,8 @@ class Crowd_sh(Base):
         gt_discrete = gen_discrete_map(h, w, keypoints)
         down_w = w // self.d_ratio
         down_h = h // self.d_ratio
-        gt_discrete = gt_discrete.reshape([down_h, self.d_ratio, down_w, self.d_ratio]).sum(axis=(1, 3))
+        gt_discrete = gt_discrete.reshape(
+            [down_h, self.d_ratio, down_w, self.d_ratio]).sum(axis=(1, 3))
         assert np.sum(gt_discrete) == len(keypoints)
 
         if len(keypoints) > 0:
