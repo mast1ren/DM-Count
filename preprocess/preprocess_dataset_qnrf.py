@@ -7,6 +7,7 @@ import cv2
 
 dir_name = os.path.dirname(os.path.abspath(__file__))
 
+
 def cal_new_size(im_h, im_w, min_size, max_size):
     if im_h < im_w:
         if im_h < min_size:
@@ -38,7 +39,8 @@ def generate_data(im_path, min_size, max_size):
     im_w, im_h = im.size
     mat_path = im_path.replace('.jpg', '_ann.mat')
     points = loadmat(mat_path)['annPoints'].astype(np.float32)
-    idx_mask = (points[:, 0] >= 0) * (points[:, 0] <= im_w) * (points[:, 1] >= 0) * (points[:, 1] <= im_h)
+    idx_mask = (points[:, 0] >= 0) * (points[:, 0] <= im_w) * \
+        (points[:, 1] >= 0) * (points[:, 1] <= im_h)
     points = points[idx_mask]
     im_h, im_w, rr = cal_new_size(im_h, im_w, min_size, max_size)
     im = np.array(im)

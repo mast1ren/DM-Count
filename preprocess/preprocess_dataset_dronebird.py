@@ -39,7 +39,7 @@ def generate_data(im_path, min_size, max_size):
     im = Image.open(im_path)
     im_w, im_h = im.size
     mat_path = im_path.replace('.jpg', '.mat').replace('data', 'annotation')
-    points = loadmat(mat_path)['locations'][:,:2].astype(np.float32)
+    points = loadmat(mat_path)['locations'][:, :2].astype(np.float32)
     idx_mask = (points[:, 0] >= 0) * (points[:, 0] <= im_w) * \
         (points[:, 1] >= 0) * (points[:, 1] <= im_h)
     points = points[idx_mask]

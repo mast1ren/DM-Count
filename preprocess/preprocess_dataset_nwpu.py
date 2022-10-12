@@ -60,8 +60,8 @@ def gen_density_map_gaussian(im_height, im_width, points, sigma=4):
         if np.sum(gaussian_map):
             gaussian_map = gaussian_map / np.sum(gaussian_map)
         density_map[
-        max(0, p[0] - gaussian_radius):min(h, p[0] + gaussian_radius + 1),
-        max(0, p[1] - gaussian_radius):min(w, p[1] + gaussian_radius + 1)
+            max(0, p[0] - gaussian_radius):min(h, p[0] + gaussian_radius + 1),
+            max(0, p[1] - gaussian_radius):min(w, p[1] + gaussian_radius + 1)
         ] += gaussian_map
     density_map = density_map / (np.sum(density_map / num_gt))
     return density_map
@@ -72,7 +72,8 @@ def generate_data(im_path, mat_path, min_size, max_size):
     im_w, im_h = im.size
     points = loadmat(mat_path)['annPoints'].astype(np.float32)
     if len(points) > 0:  # some image has no crowd
-        idx_mask = (points[:, 0] >= 0) * (points[:, 0] <= im_w) * (points[:, 1] >= 0) * (points[:, 1] <= im_h)
+        idx_mask = (points[:, 0] >= 0) * (points[:, 0] <= im_w) * \
+            (points[:, 1] >= 0) * (points[:, 1] <= im_h)
         points = points[idx_mask]
     im_h, im_w, rr_h, rr_w = cal_new_size_v2(im_h, im_w, min_size, max_size)
     im = np.array(im)
@@ -114,7 +115,8 @@ def main(input_dataset_path, output_dataset_path, min_size=384, max_size=1920):
                 im_save_path = os.path.join(sub_save_dir, name)
                 print(name)
                 # The Gaussian smoothed density map is just for visualization. It's not used in training.
-                im, points, density_map = generate_data(im_path, mat_path, min_size, max_size)
+                im, points, density_map = generate_data(
+                    im_path, mat_path, min_size, max_size)
                 im.save(im_save_path)
                 gd_save_path = im_save_path.replace('jpg', 'npy')
                 np.save(gd_save_path, points)

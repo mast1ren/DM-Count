@@ -18,7 +18,8 @@ import utils.log_utils as log_utils
 def train_collate(batch):
     transposed_batch = list(zip(*batch))
     images = torch.stack(transposed_batch[0], 0)
-    points = transposed_batch[1]  # the number of points is not fixed, keep it as a list of tensor
+    # the number of points is not fixed, keep it as a list of tensor
+    points = transposed_batch[1]
     gt_discretes = torch.stack(transposed_batch[2], 0)
     return images, points, gt_discretes
 
@@ -37,7 +38,8 @@ class Trainer(object):
             os.makedirs(self.save_dir)
 
         time_str = datetime.strftime(datetime.now(), '%m%d-%H%M%S')
-        self.logger = log_utils.get_logger(os.path.join(self.save_dir, 'train-{:s}.log'.format(time_str)))
+        self.logger = log_utils.get_logger(os.path.join(
+            self.save_dir, 'train-{:s}.log'.format(time_str)))
         log_utils.print_config(vars(args), self.logger)
 
         if torch.cuda.is_available():
@@ -63,9 +65,9 @@ class Trainer(object):
                              }
         elif args.dataset.lower() == 'dronebird':
             self.datasets = {'train': Crowd_dronebird(os.path.join(args.data_dir, 'train'),
-                                               args.crop_size, downsample_ratio, 'train'),
+                                                      args.crop_size, downsample_ratio, 'train'),
                              'val': Crowd_dronebird(os.path.join(args.data_dir, 'val'),
-                                             args.crop_size, downsample_ratio, 'val'),
+                                                    args.crop_size, downsample_ratio, 'val'),
                              }
         else:
             raise NotImplementedError
@@ -75,13 +77,15 @@ class Trainer(object):
                                                       if x == 'train' else default_collate),
                                           batch_size=(args.batch_size
                                                       if x == 'train' else 1),
-                                          shuffle=(True if x == 'train' else False),
+                                          shuffle=(
+                                              True if x == 'train' else False),
                                           num_workers=args.num_workers * self.device_count,
                                           pin_memory=(True if x == 'train' else False))
                             for x in ['train', 'val']}
         self.model = vgg19()
         self.model.to(self.device)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        self.optimizer = optim.Adam(
+            self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
         self.start_epoch = 0
         if args.resume:
@@ -90,10 +94,12 @@ class Trainer(object):
             if suf == 'tar':
                 checkpoint = torch.load(args.resume, self.device)
                 self.model.load_state_dict(checkpoint['model_state_dict'])
-                self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                self.optimizer.load_state_dict(
+                    checkpoint['optimizer_state_dict'])
                 self.start_epoch = checkpoint['epoch'] + 1
             elif suf == 'pth':
-                self.model.load_state_dict(torch.load(args.resume, self.device))
+                self.model.load_state_dict(
+                    torch.load(args.resume, self.device))
         else:
             self.logger.info('random initialization')
 
@@ -111,7 +117,8 @@ class Trainer(object):
         """training process"""
         args = self.args
         for epoch in range(self.start_epoch, args.max_epoch + 1):
-            self.logger.info('-' * 5 + 'Epoch {}/{}'.format(epoch, args.max_epoch) + '-' * 5)
+            self.logger.info(
+                '-' * 5 + 'Epoch {}/{}'.format(epoch, args.max_epoch) + '-' * 5)
             self.epoch = epoch
             self.train_eopch()
             if epoch % args.val_epoch == 0 and epoch >= args.val_start:
@@ -139,7 +146,8 @@ class Trainer(object):
             with torch.set_grad_enabled(True):
                 outputs, outputs_normed = self.model(inputs)
                 # Compute OT loss.
-                ot_loss, wd, ot_obj_value = self.ot_loss(outputs_normed, outputs, points)
+                ot_loss, wd, ot_obj_value = self.ot_loss(
+                    outputs_normed, outputs, points)
                 ot_loss = ot_loss * self.args.wot
                 ot_obj_value = ot_obj_value * self.args.wot
                 epoch_ot_loss.update(ot_loss.item(), N)
@@ -165,7 +173,8 @@ class Trainer(object):
                 loss.backward()
                 self.optimizer.step()
 
-                pred_count = torch.sum(outputs.view(N, -1), dim=1).detach().cpu().numpy()
+                pred_count = torch.sum(outputs.view(
+                    N, -1), dim=1).detach().cpu().numpy()
                 pred_err = pred_count - gd_count
                 epoch_loss.update(loss.item(), N)
                 epoch_mse.update(np.mean(pred_err * pred_err), N)
@@ -174,12 +183,13 @@ class Trainer(object):
         self.logger.info(
             'Epoch {} Train, Loss: {:.2f}, OT Loss: {:.2e}, Wass Distance: {:.2f}, OT obj value: {:.2f}, '
             'Count Loss: {:.2f}, TV Loss: {:.2f}, MSE: {:.2f} MAE: {:.2f}, Cost {:.1f} sec'
-                .format(self.epoch, epoch_loss.get_avg(), epoch_ot_loss.get_avg(), epoch_wd.get_avg(),
-                        epoch_ot_obj_value.get_avg(), epoch_count_loss.get_avg(), epoch_tv_loss.get_avg(),
-                        np.sqrt(epoch_mse.get_avg()), epoch_mae.get_avg(),
-                        time.time() - epoch_start))
+            .format(self.epoch, epoch_loss.get_avg(), epoch_ot_loss.get_avg(), epoch_wd.get_avg(),
+                    epoch_ot_obj_value.get_avg(), epoch_count_loss.get_avg(), epoch_tv_loss.get_avg(),
+                    np.sqrt(epoch_mse.get_avg()), epoch_mae.get_avg(),
+                    time.time() - epoch_start))
         model_state_dic = self.model.state_dict()
-        save_path = os.path.join(self.save_dir, '{}_ckpt.tar'.format(self.epoch))
+        save_path = os.path.join(
+            self.save_dir, '{}_ckpt.tar'.format(self.epoch))
         torch.save({
             'epoch': self.epoch,
             'optimizer_state_dict': self.optimizer.state_dict(),
@@ -194,7 +204,8 @@ class Trainer(object):
         epoch_res = []
         for inputs, count, name in self.dataloaders['val']:
             inputs = inputs.to(self.device)
-            assert inputs.size(0) == 1, 'the batch size should equal to 1 in validation mode'
+            assert inputs.size(
+                0) == 1, 'the batch size should equal to 1 in validation mode'
             with torch.set_grad_enabled(False):
                 outputs, _ = self.model(inputs)
                 res = count[0].item() - torch.sum(outputs).item()
@@ -213,5 +224,6 @@ class Trainer(object):
             self.logger.info("save best mse {:.2f} mae {:.2f} model epoch {}".format(self.best_mse,
                                                                                      self.best_mae,
                                                                                      self.epoch))
-            torch.save(model_state_dic, os.path.join(self.save_dir, 'best_model_{}.pth'.format(self.best_count)))
+            torch.save(model_state_dic, os.path.join(self.save_dir,
+                       'best_model_{}.pth'.format(self.best_count)))
             self.best_count += 1
