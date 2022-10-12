@@ -19,5 +19,9 @@ elif args.dataset.lower() == 'nwpu':
     from preprocess.preprocess_dataset_nwpu import main
 
     main(args.input_dataset_path, args.output_dataset_path, 384, 1920)
+elif args.dataset.lower() == 'dronebird':
+    from preprocess.preprocess_dataset_qnrf import main
+
+    main(args.input_dataset_path, args.output_dataset_path, 512, 2048)
 else:
     raise NotImplementedError
