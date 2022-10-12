@@ -69,7 +69,7 @@ class Trainer(object):
                              }
         else:
             raise NotImplementedError
-        self.device = torch.device("cpu")
+        # self.device = torch.device("cpu")
         self.dataloaders = {x: DataLoader(self.datasets[x],
                                           collate_fn=(train_collate
                                                       if x == 'train' else default_collate),
