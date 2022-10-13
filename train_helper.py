@@ -64,11 +64,9 @@ class Trainer(object):
                                              args.crop_size, downsample_ratio, 'val'),
                              }
         elif args.dataset.lower() == 'dronebird':
-            self.datasets = {'train': Crowd_dronebird(os.path.join(args.data_dir, 'train'),
-                                                      args.crop_size, downsample_ratio, 'train'),
+            self.datasets = {'train': Crowd_dronebird(os.path.join(args.data_dir, 'train'), args.crop_size, downsample_ratio, 'train'),
                              'val': Crowd_dronebird(os.path.join(args.data_dir, 'val'),
-                                                    args.crop_size, downsample_ratio, 'val'),
-                             }
+                                                    args.crop_size, downsample_ratio, 'val'), }
         else:
             raise NotImplementedError
         # self.device = torch.device("cpu")
