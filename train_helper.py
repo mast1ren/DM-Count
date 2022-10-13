@@ -219,9 +219,8 @@ class Trainer(object):
         if (2.0 * mse + mae) < (2.0 * self.best_mse + self.best_mae):
             self.best_mse = mse
             self.best_mae = mae
-            self.logger.info("save best mse {:.2f} mae {:.2f} model epoch {}".format(self.best_mse,
-                                                                                     self.best_mae,
-                                                                                     self.epoch))
+            self.logger.info("save best mse {:.2f} mae {:.2f} model epoch {}".format(
+                self.best_mse, self.best_mae, self.epoch))
             torch.save(model_state_dic, os.path.join(self.save_dir,
                        'best_model_{}.pth'.format(self.best_count)))
             self.best_count += 1
