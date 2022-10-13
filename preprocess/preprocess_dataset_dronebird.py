@@ -95,5 +95,5 @@ def main(input_dataset_path, output_dataset_path, min_size=512, max_size=2048):
 
 if __name__ == '__main__':
     input_dataset_path = '../../ds/dronebird'
-    output_dataset_path = '../data'
+    output_dataset_path = '../../ds/dronebird/npydata'
     main(input_dataset_path, output_dataset_path)
