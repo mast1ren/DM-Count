@@ -61,36 +61,43 @@ def main(input_dataset_path, output_dataset_path, min_size=512, max_size=2048):
                 sub_save_dir = os.path.join(output_dataset_path, sub_phase)
                 if not os.path.exists(sub_save_dir):
                     os.makedirs(sub_save_dir)
-                # with open(os.path.join(dir_name, '{}.json'.format(sub_phase))) as f:
                 with open(os.path.join('..', input_dataset_path, '{}.json'.format(sub_phase))) as f:
                     im_name_list = json.load(f)
-                for im_name in im_name_list:
-                    im_path = os.path.join('..', im_name)
-                    # for i in f:
-                    #     im_path = os.path.join(sub_dir, i.strip())
+                for i in range(len(im_name_list)):
+                    im_path = im_name_list[i]
                     name = os.path.basename(im_path)
-                    print(name)
+                    seq = im_path.split('/')[-3]
+                    name = seq + "_" + name
+                    # print(name)
+                    print('\r[{:>{}}/{}] Processing {}...'.format(i,
+                          len(str(len(im_name_list))), len(im_name_list), im_path), end='')
                     im, points = generate_data(im_path, min_size, max_size)
                     im_save_path = os.path.join(sub_save_dir, name)
                     im.save(im_save_path)
                     gd_save_path = im_save_path.replace('jpg', 'npy')
                     np.save(gd_save_path, points)
+                print('\nDone!')
         else:
             sub_save_dir = os.path.join(output_dataset_path, 'test')
             if not os.path.exists(sub_save_dir):
                 os.makedirs(sub_save_dir)
             with open(os.path.join('..', input_dataset_path, 'test.json')) as f:
                 im_name_list = json.load(f)
-            # im_list = glob(os.path.join(sub_dir, '*jpg'))
-            for im_name in im_name_list:
-                im_path = os.path.join('..', im_name)
+            for i in range(len(im_name_list)):
+                im_path = im_name_list[i]
                 name = os.path.basename(im_path)
-                print(name)
+                seq = im_path.split('/')[-3]
+                name = seq + "_" + name
+                print('\r[{:>{}}/{}] Processing {}...'.format(i,
+                      len(str(len(im_name_list))), len(im_name_list), im_path), end='')
+                name = os.path.basename(im_path)
+                # print(name)
                 im, points = generate_data(im_path, min_size, max_size)
                 im_save_path = os.path.join(sub_save_dir, name)
                 im.save(im_save_path)
                 gd_save_path = im_save_path.replace('jpg', 'npy')
                 np.save(gd_save_path, points)
+            print('\nDone!')
 
 
 if __name__ == '__main__':
