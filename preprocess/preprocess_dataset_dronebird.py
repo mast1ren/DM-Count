@@ -82,7 +82,8 @@ def main(input_dataset_path, output_dataset_path, min_size=512, max_size=2048):
             with open(os.path.join('..', input_dataset_path, 'test.json')) as f:
                 im_name_list = json.load(f)
             # im_list = glob(os.path.join(sub_dir, '*jpg'))
-            for im_path in im_name_list:
+            for im_name in im_name_list:
+                im_path = os.path.join('..', im_name)
                 name = os.path.basename(im_path)
                 print(name)
                 im, points = generate_data(im_path, min_size, max_size)
