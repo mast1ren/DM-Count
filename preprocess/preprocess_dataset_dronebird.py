@@ -44,7 +44,7 @@ def generate_data(im_path, min_size, max_size):
         (points[:, 1] >= 0) * (points[:, 1] <= im_h)
     points = points[idx_mask]
     im_h, im_w, rr = cal_new_size(im_h, im_w, min_size, max_size)
-    print(im.size, '=>', im_h, im_w, rr)
+    # print(im.size, '=>', im_h, im_w, rr)
     im = np.array(im)
     if rr != 1.0:
         im = cv2.resize(np.array(im), (im_w, im_h), cv2.INTER_CUBIC)
@@ -61,7 +61,7 @@ def main(input_dataset_path, output_dataset_path, min_size=512, max_size=2048):
                 sub_save_dir = os.path.join(output_dataset_path, sub_phase)
                 if not os.path.exists(sub_save_dir):
                     os.makedirs(sub_save_dir)
-                with open(os.path.join('..', input_dataset_path, '{}.json'.format(sub_phase))) as f:
+                with open(os.path.join(input_dataset_path, '{}.json'.format(sub_phase))) as f:
                     im_name_list = json.load(f)
                 for i in range(len(im_name_list)):
                     im_path = im_name_list[i]
@@ -81,7 +81,7 @@ def main(input_dataset_path, output_dataset_path, min_size=512, max_size=2048):
             sub_save_dir = os.path.join(output_dataset_path, 'test')
             if not os.path.exists(sub_save_dir):
                 os.makedirs(sub_save_dir)
-            with open(os.path.join('..', input_dataset_path, 'test.json')) as f:
+            with open(os.path.join( input_dataset_path, 'test.json')) as f:
                 im_name_list = json.load(f)
             for i in range(len(im_name_list)):
                 im_path = im_name_list[i]
@@ -102,5 +102,5 @@ def main(input_dataset_path, output_dataset_path, min_size=512, max_size=2048):
 
 if __name__ == '__main__':
     input_dataset_path = '../../ds/dronebird'
-    output_dataset_path = '../../ds/dronebird/npydata'
+    output_dataset_path = '../preprocessed_data'
     main(input_dataset_path, output_dataset_path)

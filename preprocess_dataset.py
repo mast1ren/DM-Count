@@ -7,7 +7,7 @@ parser.add_argument('--dataset', default='dronebird',
                     help='dataset name, only support qnrf and nwpu')
 parser.add_argument('--input-dataset-path', default='../../ds/dronebird',
                     help='original data directory')
-parser.add_argument('--output-dataset-path', default='../data',
+parser.add_argument('--output-dataset-path', default='./preprocessed_data',
                     help='processed data directory')
 args = parser.parse_args()
 
@@ -20,7 +20,7 @@ elif args.dataset.lower() == 'nwpu':
 
     main(args.input_dataset_path, args.output_dataset_path, 384, 1920)
 elif args.dataset.lower() == 'dronebird':
-    from preprocess.preprocess_dataset_qnrf import main
+    from preprocess.preprocess_dataset_dronebird import main
 
     main(args.input_dataset_path, args.output_dataset_path, 512, 2048)
 else:

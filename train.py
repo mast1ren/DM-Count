@@ -11,7 +11,7 @@ def str2bool(v):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train')
-    parser.add_argument('--data-dir', default='../../ds/dronebird/npydata', help='data path')
+    parser.add_argument('--data-dir', default='./preprocessed_data', help='data path')
     parser.add_argument('--dataset', default='dronebird',
                         help='dataset name: qnrf, nwpu, sha, shb')
     parser.add_argument('--lr', type=float, default=1e-5,

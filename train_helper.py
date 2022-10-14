@@ -167,6 +167,7 @@ class Trainer(object):
 
                 loss = ot_loss + count_loss + tv_loss
 
+                print('\r[{:>{}}/{}] ot_loss: {:.4f} count_loss: {:.4f} tv_loss: {:.4f} loss: {:.4f}'.format(step + 1, len(str(len(self.dataloaders['train']))), len(self.dataloaders['train']), ot_loss.item(), count_loss.item(), tv_loss.item(), loss.item()), end='')
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
@@ -177,7 +178,7 @@ class Trainer(object):
                 epoch_loss.update(loss.item(), N)
                 epoch_mse.update(np.mean(pred_err * pred_err), N)
                 epoch_mae.update(np.mean(abs(pred_err)), N)
-
+        print()
         self.logger.info(
             'Epoch {} Train, Loss: {:.2f}, OT Loss: {:.2e}, Wass Distance: {:.2f}, OT obj value: {:.2f}, '
             'Count Loss: {:.2f}, TV Loss: {:.2f}, MSE: {:.2f} MAE: {:.2f}, Cost {:.1f} sec'
@@ -186,8 +187,7 @@ class Trainer(object):
                     np.sqrt(epoch_mse.get_avg()), epoch_mae.get_avg(),
                     time.time() - epoch_start))
         model_state_dic = self.model.state_dict()
-        save_path = os.path.join(
-            self.save_dir, '{}_ckpt.tar'.format(self.epoch))
+        save_path = os.path.join(self.save_dir, '{}_ckpt.tar'.format(self.epoch))
         torch.save({
             'epoch': self.epoch,
             'optimizer_state_dict': self.optimizer.state_dict(),
@@ -200,15 +200,18 @@ class Trainer(object):
         epoch_start = time.time()
         self.model.eval()  # Set model to evaluate mode
         epoch_res = []
+        i = 0
         for inputs, count, name in self.dataloaders['val']:
             inputs = inputs.to(self.device)
             assert inputs.size(
                 0) == 1, 'the batch size should equal to 1 in validation mode'
             with torch.set_grad_enabled(False):
+                i+=1
                 outputs, _ = self.model(inputs)
                 res = count[0].item() - torch.sum(outputs).item()
                 epoch_res.append(res)
-
+                print('\r[{:>{}}/{}] error: {}'.format(i, len(str(len(self.dataloaders['val']))), len(self.dataloaders['val']), res), end='')
+        print()
         epoch_res = np.array(epoch_res)
         mse = np.sqrt(np.mean(np.square(epoch_res)))
         mae = np.mean(np.abs(epoch_res))
