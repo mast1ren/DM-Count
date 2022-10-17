@@ -14,7 +14,7 @@ parser.add_argument('--model-path', type=str, default='pretrained_models/model_q
 parser.add_argument('--data-path', type=str,
                     default='data/QNRF-Train-Val-Test',
                     help='saved model path')
-parser.add_argument('--dataset', type=str, default='qnrf',
+parser.add_argument('--dataset', type=str, default='dronebird',
                     help='dataset name: qnrf, nwpu, sha, shb')
 parser.add_argument('--pred-density-map-path', type=str, default='',
                     help='save predicted density maps when pred-density-map-path is not empty.')
@@ -34,6 +34,8 @@ elif args.dataset.lower() == 'nwpu':
     dataset = crowd.Crowd_nwpu(os.path.join(data_path, 'val'), crop_size, 8, method='val')
 elif args.dataset.lower() == 'sha' or args.dataset.lower() == 'shb':
     dataset = crowd.Crowd_sh(os.path.join(data_path, 'test_data'), crop_size, 8, method='val')
+elif args.dataset.lower() == 'dronebird':
+    dataset = crowd.Crowd_dronebird(os.path.join(data_path, 'test'), crop_size, 8, method='val')
 else:
     raise NotImplementedError
 dataloader = torch.utils.data.DataLoader(dataset, 1, shuffle=False,
@@ -49,6 +51,7 @@ model.to(device)
 model.load_state_dict(torch.load(model_path, device))
 model.eval()
 image_errs = []
+i = 0
 for inputs, count, name in dataloader:
     inputs = inputs.to(device)
     assert inputs.size(0) == 1, 'the batch size should equal to 1'
@@ -56,9 +59,9 @@ for inputs, count, name in dataloader:
         outputs, _ = model(inputs)
     img_err = count[0].item() - torch.sum(outputs).item()
 
-    print(name, img_err, count[0].item(), torch.sum(outputs).item())
+    print('\r[{:>{}}/{}] img: {}, error: {}, gt: {}, pred: {}'.format(i, len(str(len(dataloader))), len(dataloader), name, img_err, count[0].item(), torch.sum(outputs).item()), end='')
     image_errs.append(img_err)
-
+    i += 1
     if args.pred_density_map_path:
         vis_img = outputs[0, 0].cpu().numpy()
         # normalize density map values from 0 to 1, then map it to 0-255.
@@ -66,8 +69,9 @@ for inputs, count, name in dataloader:
         vis_img = (vis_img * 255).astype(np.uint8)
         vis_img = cv2.applyColorMap(vis_img, cv2.COLORMAP_JET)
         cv2.imwrite(os.path.join(args.pred_density_map_path, str(name[0]) + '.png'), vis_img)
+print()
 
-image_errs = np.array(image_errs)
+image_errs = np.abs(np.array(image_errs))
 mse = np.sqrt(np.mean(np.square(image_errs)))
 mae = np.mean(np.abs(image_errs))
-print('{}: mae {}, mse {}\n'.format(model_path, mae, mse))
+print('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
