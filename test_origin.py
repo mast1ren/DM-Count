@@ -8,6 +8,45 @@ from models import vgg19
 import json
 from torchvision import transforms
 import h5py
+from sklearn.metrics import mean_squared_error,mean_absolute_error
+
+def get_seq_class(seq, set):
+    backlight = ['DJI_0021', 'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
+    cloudy = ['DJI_0519', 'DJI_0554']
+    
+    # uhd = ['DJI_0332', 'DJI_0334', 'DJI_0339', 'DJI_0340', 'DJI_0342', 'DJI_0343', 'DJI_345', 'DJI_0348', 'DJI_0519', 'DJI_0544']
+
+    fly = ['DJI_0177', 'DJI_0174', 'DJI_0022', 'DJI_0180', 'DJI_0181', 'DJI_0200', 'DJI_0544', 'DJI_0012', 'DJI_0178', 'DJI_0343', 'DJI_0185', 'DJI_0195']
+
+    angle_90 = ['DJI_0179', 'DJI_0186', 'DJI_0189', 'DJI_0191', 'DJI_0196', 'DJI_0190']
+
+    mid_size = ['DJI_0012', 'DJI_0013', 'DJI_0014', 'DJI_0021', 'DJI_0022', 'DJI_0026', 'DJI_0028', 'DJI_0028', 'DJI_0030', 'DJI_0028', 'DJI_0030', 'DJI_0034','DJI_0200', 'DJI_0544']
+
+    light = 'sunny'
+    bird = 'stand'
+    angle = '60'
+    size = 'small'
+    # resolution = '4k'
+    if seq in backlight:
+        light = 'backlight'
+    elif seq in cloudy:
+        light = 'cloudy'
+    if seq in fly:
+        bird = 'fly'
+    if seq in angle_90:
+        angle = '90'
+    if seq in mid_size:
+        size = 'mid'
+
+    # if seq in uhd:
+    #     resolution = 'uhd'
+    
+    # count = 'sparse'
+    # loca = sio.loadmat(os.path.join(set, seq, 'annotation/000000.mat'))['locations']
+    # if loca.shape[0] > 150:
+    #     count = 'crowded'
+    # return light, resolution, count
+    return light, angle, bird, size
 
 parser = argparse.ArgumentParser(description='Test ')
 parser.add_argument('--device', default='0', help='assign device')
@@ -40,9 +79,15 @@ model.to(device)
 model.load_state_dict(torch.load(model_path, device))
 model.eval()
 image_errs = []
+
+preds = [[] for i in range(11)]
+gts = [[] for i in range(11)]
 i = 0
 # for inputs, count, name in dataloader:
 for img_path in dataset:
+    img_path = os.path.join('../../ds/dronebird', img_path)
+    seq = img_path.split('/')[-3]
+    light, angle, bird, size = get_seq_class(seq, 'test')
     img = Image.open(img_path).convert('RGB')
     inputs = transforms.ToTensor()(img)
     inputs = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(inputs).unsqueeze(0)
@@ -50,11 +95,47 @@ for img_path in dataset:
 
     gt_path = img_path.replace('data', 'annotation').replace('jpg', 'h5')
     gt = np.array(h5py.File(gt_path, 'r')['density']).sum()
+
+    count = ['crowded' if gt > 150 else 'sparse']
     assert inputs.size(0) == 1, 'the batch size should equal to 1'
     with torch.set_grad_enabled(False):
         outputs, _ = model(inputs)
+    pred_e = torch.sum(outputs).item()
+    gt_e = gt
     img_err = abs(gt-torch.sum(outputs).item())
-
+    if light == 'sunny':
+        preds[0].append(pred_e)
+        gts[0].append(gt_e)
+    elif light == 'backlight':
+        preds[1].append(pred_e)
+        gts[1].append(gt_e)
+    else:
+        preds[2].append(pred_e)
+        gts[2].append(gt_e)
+    if count == 'crowded':
+        preds[3].append(pred_e)
+        gts[3].append(gt_e)
+    else:
+        preds[4].append(pred_e)
+        gts[4].append(gt_e)
+    if angle == '60':
+        preds[5].append(pred_e)
+        gts[5].append(gt_e)
+    else:
+        preds[6].append(pred_e)
+        gts[6].append(gt_e)
+    if bird == 'stand':
+        preds[7].append(pred_e)
+        gts[7].append(gt_e)
+    else:
+        preds[8].append(pred_e)
+        gts[8].append(gt_e)
+    if size == 'small':
+        preds[9].append(pred_e)
+        gts[9].append(gt_e)
+    else:
+        preds[10].append(pred_e)
+        gts[10].append(gt_e)
     print('\r[{:>{}}/{}] img: {}, error: {}, gt: {}, pred: {}'.format(i, len(str(len(dataset))), len(dataset), os.path.basename(img_path), img_err, gt, torch.sum(outputs).item()), end='')
     image_errs.append(img_err)
     i += 1
@@ -71,3 +152,9 @@ image_errs = np.abs(np.array(image_errs))
 mse = np.sqrt(np.mean(np.square(image_errs)))
 mae = np.mean(np.abs(image_errs))
 print('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
+
+attri = ['sunny', 'backlight', 'cloudy', 'crowded', 'sparse', '60', '90', 'stand', 'fly', 'small', 'mid']
+for i in range(11):
+    if len(preds[i]) == 0:
+        continue
+    print('{}: MAE:{}. RMSE:{}.'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))
