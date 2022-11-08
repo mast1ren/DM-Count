@@ -12,7 +12,7 @@ from sklearn.metrics import mean_squared_error,mean_absolute_error
 
 def get_seq_class(seq, set):
     backlight = ['DJI_0021', 'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
-    cloudy = ['DJI_0519', 'DJI_0554']
+    # cloudy = ['DJI_0519', 'DJI_0554']
     
     # uhd = ['DJI_0332', 'DJI_0334', 'DJI_0339', 'DJI_0340', 'DJI_0342', 'DJI_0343', 'DJI_345', 'DJI_0348', 'DJI_0519', 'DJI_0544']
 
@@ -29,8 +29,8 @@ def get_seq_class(seq, set):
     # resolution = '4k'
     if seq in backlight:
         light = 'backlight'
-    elif seq in cloudy:
-        light = 'cloudy'
+    # elif seq in cloudy:
+    #     light = 'cloudy'
     if seq in fly:
         bird = 'fly'
     if seq in angle_90:
@@ -109,33 +109,33 @@ for img_path in dataset:
     elif light == 'backlight':
         preds[1].append(pred_e)
         gts[1].append(gt_e)
-    else:
+    # else:
+    #     preds[2].append(pred_e)
+    #     gts[2].append(gt_e)
+    if count == 'crowded':
         preds[2].append(pred_e)
         gts[2].append(gt_e)
-    if count == 'crowded':
+    else:
         preds[3].append(pred_e)
         gts[3].append(gt_e)
-    else:
+    if angle == '60':
         preds[4].append(pred_e)
         gts[4].append(gt_e)
-    if angle == '60':
+    else:
         preds[5].append(pred_e)
         gts[5].append(gt_e)
-    else:
+    if bird == 'stand':
         preds[6].append(pred_e)
         gts[6].append(gt_e)
-    if bird == 'stand':
+    else:
         preds[7].append(pred_e)
         gts[7].append(gt_e)
-    else:
+    if size == 'small':
         preds[8].append(pred_e)
         gts[8].append(gt_e)
-    if size == 'small':
+    else:
         preds[9].append(pred_e)
         gts[9].append(gt_e)
-    else:
-        preds[10].append(pred_e)
-        gts[10].append(gt_e)
     print('\r[{:>{}}/{}] img: {}, error: {}, gt: {}, pred: {}'.format(i, len(str(len(dataset))), len(dataset), os.path.basename(img_path), img_err, gt, torch.sum(outputs).item()), end='')
     image_errs.append(img_err)
     i += 1
@@ -153,7 +153,7 @@ mse = np.sqrt(np.mean(np.square(image_errs)))
 mae = np.mean(np.abs(image_errs))
 print('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
 
-attri = ['sunny', 'backlight', 'cloudy', 'crowded', 'sparse', '60', '90', 'stand', 'fly', 'small', 'mid']
+attri = ['sunny', 'backlight', 'crowded', 'sparse', '60', '90', 'stand', 'fly', 'small', 'mid']
 for i in range(11):
     if len(preds[i]) == 0:
         continue

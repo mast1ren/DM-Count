@@ -38,7 +38,8 @@ def cal_new_size(im_h, im_w, min_size, max_size):
 def generate_data(im_path, min_size, max_size):
     im = Image.open(im_path)
     im_w, im_h = im.size
-    mat_path = im_path.replace('.jpg', '.mat').replace('data', 'annotation')
+    mat_path = os.path.join(os.path.dirname(im_path).replace(
+        'images', 'ground_truth'), 'GT_'+os.path.basename(im_path).replace('jpg', 'mat'))
     points = loadmat(mat_path)['locations'][:, :2].astype(np.float32)
     idx_mask = (points[:, 0] >= 0) * (points[:, 0] <= im_w) * \
         (points[:, 1] >= 0) * (points[:, 1] <= im_h)
@@ -66,8 +67,9 @@ def main(input_dataset_path, output_dataset_path, min_size=512, max_size=2048):
                 for i in range(len(im_name_list)):
                     im_path = im_name_list[i]
                     name = os.path.basename(im_path)
-                    seq = im_path.split('/')[-3]
-                    name = seq + "_" + name
+                    # seq = im_path.split('/')[-3]
+                    # name = seq + "_" + name
+                    im_path = os.path.join(input_dataset_path, im_path)
                     # print(name)
                     print('\r[{:>{}}/{}] Processing {}...'.format(i,
                           len(str(len(im_name_list))), len(im_name_list), im_path), end='')
@@ -81,13 +83,14 @@ def main(input_dataset_path, output_dataset_path, min_size=512, max_size=2048):
             sub_save_dir = os.path.join(output_dataset_path, 'test')
             if not os.path.exists(sub_save_dir):
                 os.makedirs(sub_save_dir)
-            with open(os.path.join( input_dataset_path, 'test.json')) as f:
+            with open(os.path.join(input_dataset_path, 'test.json')) as f:
                 im_name_list = json.load(f)
             for i in range(len(im_name_list)):
                 im_path = im_name_list[i]
+                im_path = os.path.join(input_dataset_path, im_path)
                 name = os.path.basename(im_path)
-                seq = im_path.split('/')[-3]
-                name = seq + "_" + name
+                # seq = im_path.split('/')[-3]
+                # name = seq + "_" + name
                 print('\r[{:>{}}/{}] Processing {}...'.format(i,
                       len(str(len(im_name_list))), len(im_name_list), im_path), end='')
                 name = os.path.basename(im_path)
