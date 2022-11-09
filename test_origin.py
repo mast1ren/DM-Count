@@ -9,6 +9,7 @@ import json
 from torchvision import transforms
 import h5py
 from sklearn.metrics import mean_squared_error,mean_absolute_error
+from glob import glob
 
 def get_seq_class(seq, set):
     backlight = ['DJI_0021', 'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
@@ -68,11 +69,16 @@ args = parser.parse_args()
 os.environ['CUDA_VISIBLE_DEVICES'] = args.device  # set vis gpu
 device = torch.device('cuda')
 
-model_path = './ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_7.pth'
+model_path = './ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_2.pth'
 crop_size = 512
 
-with open('../../ds/dronebird/test.json') as f:
-    dataset = json.load(f)
+test_path = './preprocessed_data/test'
+# test_files = os.listdir(test_path)
+# test_files = [os.path.join(test_path, file) for file in test_files if file.endswith('.jpg')]
+# with open('../../ds/dronebird/test.json') as f:
+#     dataset = json.load(f)
+
+dataset = sorted(glob(os.path.join(test_path, '*.jpg')))
 
 model = vgg19()
 model.to(device)
@@ -80,21 +86,25 @@ model.load_state_dict(torch.load(model_path, device))
 model.eval()
 image_errs = []
 
-preds = [[] for i in range(11)]
-gts = [[] for i in range(11)]
+preds = [[] for i in range(10)]
+gts = [[] for i in range(10)]
 i = 0
 # for inputs, count, name in dataloader:
 for img_path in dataset:
-    img_path = os.path.join('../../ds/dronebird', img_path)
-    seq = img_path.split('/')[-3]
+    # img_path = os.path.join('../../ds/dronebird', img_path)
+    # seq = img_path.split('/')[-3]
+    seq = int(os.path.basename(img_path)[3:6])
+    seq = 'DJI_' + str(seq).zfill(4)
     light, angle, bird, size = get_seq_class(seq, 'test')
     img = Image.open(img_path).convert('RGB')
     inputs = transforms.ToTensor()(img)
     inputs = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(inputs).unsqueeze(0)
     inputs = inputs.to(device)
 
-    gt_path = img_path.replace('data', 'annotation').replace('jpg', 'h5')
-    gt = np.array(h5py.File(gt_path, 'r')['density']).sum()
+    gt_path = img_path.replace('jpg', 'npy')
+    gt = np.load(gt_path).shape[0]
+    # gt_path = img_path.replace('data', 'annotation').replace('jpg', 'h5')
+    # gt = np.array(h5py.File(gt_path, 'r')['density']).sum()
 
     count = ['crowded' if gt > 150 else 'sparse']
     assert inputs.size(0) == 1, 'the batch size should equal to 1'
