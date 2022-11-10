@@ -69,10 +69,10 @@ args = parser.parse_args()
 os.environ['CUDA_VISIBLE_DEVICES'] = args.device  # set vis gpu
 device = torch.device('cuda')
 
-model_path = './ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_2.pth'
+model_path = './ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_3.pth'
 crop_size = 512
 
-test_path = './preprocessed_data/test'
+test_path = './yapd/test'
 # test_files = os.listdir(test_path)
 # test_files = [os.path.join(test_path, file) for file in test_files if file.endswith('.jpg')]
 # with open('../../ds/dronebird/test.json') as f:
@@ -164,7 +164,8 @@ mae = np.mean(np.abs(image_errs))
 print('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
 
 attri = ['sunny', 'backlight', 'crowded', 'sparse', '60', '90', 'stand', 'fly', 'small', 'mid']
-for i in range(11):
+for i in range(10):
+    print(len(preds[i]))
     if len(preds[i]) == 0:
         continue
     print('{}: MAE:{}. RMSE:{}.'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))
