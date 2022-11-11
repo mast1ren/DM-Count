@@ -69,7 +69,7 @@ args = parser.parse_args()
 os.environ['CUDA_VISIBLE_DEVICES'] = args.device  # set vis gpu
 device = torch.device('cuda')
 
-model_path = './ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_3.pth'
+model_path = './ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_4.pth'
 crop_size = 512
 
 test_path = './yapd/test'
@@ -106,7 +106,7 @@ for img_path in dataset:
     # gt_path = img_path.replace('data', 'annotation').replace('jpg', 'h5')
     # gt = np.array(h5py.File(gt_path, 'r')['density']).sum()
 
-    count = ['crowded' if gt > 150 else 'sparse']
+    count = 'crowded' if gt > 150 else 'sparse'
     assert inputs.size(0) == 1, 'the batch size should equal to 1'
     with torch.set_grad_enabled(False):
         outputs, _ = model(inputs)
