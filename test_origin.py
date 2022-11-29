@@ -86,9 +86,19 @@ model.load_state_dict(torch.load(model_path, device))
 model.eval()
 image_errs = []
 
-preds = [[] for i in range(10)]
-gts = [[] for i in range(10)]
+preds = [[] for i in range(8)]
+gts = [[] for i in range(8)]
 i = 0
+# temp = './yapd/train/img012000.jpg'
+# tempimg = Image.open(temp).convert('RGB')
+# tempinput = transforms.ToTensor()(tempimg)
+# tempinput = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(tempinput).unsqueeze(0)
+# tempinput = tempinput.to(device)
+# with torch.set_grad_enabled(False):
+#     outputs, _ = model(tempinput)
+#     pre_density = outputs[0, 0].cpu().numpy()
+#     np.save('./pre_density.npy', pre_density)
+
 # for inputs, count, name in dataloader:
 for img_path in dataset:
     # img_path = os.path.join('../../ds/dronebird', img_path)
@@ -103,10 +113,11 @@ for img_path in dataset:
 
     gt_path = img_path.replace('jpg', 'npy')
     gt = np.load(gt_path).shape[0]
+    # count = 'crowded' if gt > 150 else 'sparse'
+    
     # gt_path = img_path.replace('data', 'annotation').replace('jpg', 'h5')
     # gt = np.array(h5py.File(gt_path, 'r')['density']).sum()
 
-    count = 'crowded' if gt > 150 else 'sparse'
     assert inputs.size(0) == 1, 'the batch size should equal to 1'
     with torch.set_grad_enabled(False):
         outputs, _ = model(inputs)
@@ -122,30 +133,30 @@ for img_path in dataset:
     # else:
     #     preds[2].append(pred_e)
     #     gts[2].append(gt_e)
-    if count == 'crowded':
+    # if count == 'crowded':
+    #     preds[2].append(pred_e)
+    #     gts[2].append(gt_e)
+    # else:
+    #     preds[3].append(pred_e)
+    #     gts[3].append(gt_e)
+    if angle == '60':
         preds[2].append(pred_e)
         gts[2].append(gt_e)
     else:
         preds[3].append(pred_e)
         gts[3].append(gt_e)
-    if angle == '60':
+    if bird == 'stand':
         preds[4].append(pred_e)
         gts[4].append(gt_e)
     else:
         preds[5].append(pred_e)
         gts[5].append(gt_e)
-    if bird == 'stand':
+    if size == 'small':
         preds[6].append(pred_e)
         gts[6].append(gt_e)
     else:
         preds[7].append(pred_e)
         gts[7].append(gt_e)
-    if size == 'small':
-        preds[8].append(pred_e)
-        gts[8].append(gt_e)
-    else:
-        preds[9].append(pred_e)
-        gts[9].append(gt_e)
     print('\r[{:>{}}/{}] img: {}, error: {}, gt: {}, pred: {}'.format(i, len(str(len(dataset))), len(dataset), os.path.basename(img_path), img_err, gt, torch.sum(outputs).item()), end='')
     image_errs.append(img_err)
     i += 1
@@ -161,11 +172,20 @@ print()
 image_errs = np.abs(np.array(image_errs))
 mse = np.sqrt(np.mean(np.square(image_errs)))
 mae = np.mean(np.abs(image_errs))
-print('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
+with open('test.txt', 'w') as f:
+    f.write('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
+    print('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
 
-attri = ['sunny', 'backlight', 'crowded', 'sparse', '60', '90', 'stand', 'fly', 'small', 'mid']
-for i in range(10):
-    print(len(preds[i]))
-    if len(preds[i]) == 0:
-        continue
-    print('{}: MAE:{}. RMSE:{}.'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))
+    attri = ['sunny', 'backlight', '60', '90', 'stand', 'fly', 'small', 'mid']
+    for i in range(8):
+        # print(len(preds[i]))
+        if len(preds[i]) == 0:
+            continue
+        print('{}: MAE:{}. RMSE:{}.'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))
+        f.write('{}: MAE:{}. RMSE:{}.\n'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))    
+
+    # if i == 3:
+    #     error = np.abs(np.array(preds[i]) - np.array(gts[i]))
+    #     loss_rate = error / np.array(gts[i])
+    #     print('sparse: loss_rate:{}. max:{}, min:{}.'.format(np.mean(loss_rate), np.max(loss_rate), np.min(loss_rate)))
+
