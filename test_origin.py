@@ -10,9 +10,10 @@ from torchvision import transforms
 import h5py
 from sklearn.metrics import mean_squared_error,mean_absolute_error
 from glob import glob
+import scipy.io as sio
 
 def get_seq_class(seq, set):
-    backlight = ['DJI_0021', 'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
+    backlight = ['DJI_0021', 'DJI_0022', 'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
     # cloudy = ['DJI_0519', 'DJI_0554']
     
     # uhd = ['DJI_0332', 'DJI_0334', 'DJI_0339', 'DJI_0340', 'DJI_0342', 'DJI_0343', 'DJI_345', 'DJI_0348', 'DJI_0519', 'DJI_0544']
@@ -42,12 +43,12 @@ def get_seq_class(seq, set):
     # if seq in uhd:
     #     resolution = 'uhd'
     
-    # count = 'sparse'
-    # loca = sio.loadmat(os.path.join(set, seq, 'annotation/000000.mat'))['locations']
-    # if loca.shape[0] > 150:
-    #     count = 'crowded'
+    count = 'sparse'
+    loca = sio.loadmat(os.path.join('../../ds/dronebird/', set, 'ground_truth', 'GT_img'+str(seq[-3:])+'000.mat'))['locations']
+    if loca.shape[0] > 150:
+        count = 'crowded'
     # return light, resolution, count
-    return light, angle, bird, size
+    return light, angle, bird, size, count
 
 parser = argparse.ArgumentParser(description='Test ')
 parser.add_argument('--device', default='0', help='assign device')
@@ -69,10 +70,10 @@ args = parser.parse_args()
 os.environ['CUDA_VISIBLE_DEVICES'] = args.device  # set vis gpu
 device = torch.device('cuda')
 
-model_path = './ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_4.pth'
+model_path = './ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_6.pth'
 crop_size = 512
 
-test_path = './yapd/test'
+test_path = './preprocessed_data/test'
 # test_files = os.listdir(test_path)
 # test_files = [os.path.join(test_path, file) for file in test_files if file.endswith('.jpg')]
 # with open('../../ds/dronebird/test.json') as f:
@@ -86,8 +87,8 @@ model.load_state_dict(torch.load(model_path, device))
 model.eval()
 image_errs = []
 
-preds = [[] for i in range(8)]
-gts = [[] for i in range(8)]
+preds = [[] for i in range(10)]
+gts = [[] for i in range(10)]
 i = 0
 # temp = './yapd/train/img012000.jpg'
 # tempimg = Image.open(temp).convert('RGB')
@@ -105,7 +106,7 @@ for img_path in dataset:
     # seq = img_path.split('/')[-3]
     seq = int(os.path.basename(img_path)[3:6])
     seq = 'DJI_' + str(seq).zfill(4)
-    light, angle, bird, size = get_seq_class(seq, 'test')
+    light, angle, bird, size,count = get_seq_class(seq, 'test')
     img = Image.open(img_path).convert('RGB')
     inputs = transforms.ToTensor()(img)
     inputs = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(inputs).unsqueeze(0)
@@ -133,30 +134,30 @@ for img_path in dataset:
     # else:
     #     preds[2].append(pred_e)
     #     gts[2].append(gt_e)
-    # if count == 'crowded':
-    #     preds[2].append(pred_e)
-    #     gts[2].append(gt_e)
-    # else:
-    #     preds[3].append(pred_e)
-    #     gts[3].append(gt_e)
-    if angle == '60':
+    if count == 'crowded':
         preds[2].append(pred_e)
         gts[2].append(gt_e)
     else:
         preds[3].append(pred_e)
         gts[3].append(gt_e)
-    if bird == 'stand':
+    if angle == '60':
         preds[4].append(pred_e)
         gts[4].append(gt_e)
     else:
         preds[5].append(pred_e)
         gts[5].append(gt_e)
-    if size == 'small':
+    if bird == 'stand':
         preds[6].append(pred_e)
         gts[6].append(gt_e)
     else:
         preds[7].append(pred_e)
         gts[7].append(gt_e)
+    if size == 'small':
+        preds[8].append(pred_e)
+        gts[8].append(gt_e)
+    else:
+        preds[9].append(pred_e)
+        gts[9].append(gt_e)
     print('\r[{:>{}}/{}] img: {}, error: {}, gt: {}, pred: {}'.format(i, len(str(len(dataset))), len(dataset), os.path.basename(img_path), img_err, gt, torch.sum(outputs).item()), end='')
     image_errs.append(img_err)
     i += 1
@@ -176,8 +177,8 @@ with open('test.txt', 'w') as f:
     f.write('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
     print('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
 
-    attri = ['sunny', 'backlight', '60', '90', 'stand', 'fly', 'small', 'mid']
-    for i in range(8):
+    attri = ['sunny', 'backlight','crowded', 'sparse', '60', '90', 'stand', 'fly', 'small', 'mid']
+    for i in range(10):
         # print(len(preds[i]))
         if len(preds[i]) == 0:
             continue
