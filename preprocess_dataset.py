@@ -3,12 +3,19 @@
 import argparse
 
 parser = argparse.ArgumentParser(description='Preprocess')
-parser.add_argument('--dataset', default='dronebird',
-                    help='dataset name, only support qnrf and nwpu')
-parser.add_argument('--input-dataset-path', default='../../ds/dronebird',
-                    help='original data directory')
-parser.add_argument('--output-dataset-path', default='./preprocessed_data',
-                    help='processed data directory')
+parser.add_argument(
+    '--dataset', default='dronebird', help='dataset name, only support qnrf and nwpu'
+)
+parser.add_argument(
+    '--input-dataset-path',
+    default='../../nas-public-linkdata/ds/dronebird',
+    help='original data directory',
+)
+parser.add_argument(
+    '--output-dataset-path',
+    default='./preprocessed_data',
+    help='processed data directory',
+)
 args = parser.parse_args()
 
 if args.dataset.lower() == 'qnrf':

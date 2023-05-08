@@ -8,21 +8,77 @@ from models import vgg19
 import json
 from torchvision import transforms
 import h5py
-from sklearn.metrics import mean_squared_error,mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from glob import glob
 import scipy.io as sio
 
+
 def get_seq_class(seq, set):
-    backlight = ['DJI_0021', 'DJI_0022', 'DJI_0032', 'DJI_0202', 'DJI_0339', 'DJI_0340']
-    # cloudy = ['DJI_0519', 'DJI_0554']
-    
-    # uhd = ['DJI_0332', 'DJI_0334', 'DJI_0339', 'DJI_0340', 'DJI_0342', 'DJI_0343', 'DJI_345', 'DJI_0348', 'DJI_0519', 'DJI_0544']
+    backlight = [
+        'DJI_0021',
+        'DJI_0022',
+        'DJI_0032',
+        'DJI_0202',
+        'DJI_0339',
+        'DJI_0340',
+        'DJI_0463',
+        'DJI_0003',
+    ]
 
-    fly = ['DJI_0177', 'DJI_0174', 'DJI_0022', 'DJI_0180', 'DJI_0181', 'DJI_0200', 'DJI_0544', 'DJI_0012', 'DJI_0178', 'DJI_0343', 'DJI_0185', 'DJI_0195']
+    fly = [
+        'DJI_0177',
+        'DJI_0174',
+        'DJI_0022',
+        'DJI_0180',
+        'DJI_0181',
+        'DJI_0200',
+        'DJI_0544',
+        'DJI_0012',
+        'DJI_0178',
+        'DJI_0343',
+        'DJI_0185',
+        'DJI_0195',
+        'DJI_0996',
+        'DJI_0977',
+        'DJI_0945',
+        'DJI_0946',
+        'DJI_0091',
+        'DJI_0442',
+        'DJI_0466',
+        'DJI_0459',
+        'DJI_0464',
+    ]
 
-    angle_90 = ['DJI_0179', 'DJI_0186', 'DJI_0189', 'DJI_0191', 'DJI_0196', 'DJI_0190']
+    angle_90 = [
+        'DJI_0179',
+        'DJI_0186',
+        'DJI_0189',
+        'DJI_0191',
+        'DJI_0196',
+        'DJI_0190',
+        'DJI_0070',
+        'DJI_0091',
+    ]
 
-    mid_size = ['DJI_0012', 'DJI_0013', 'DJI_0014', 'DJI_0021', 'DJI_0022', 'DJI_0026', 'DJI_0028', 'DJI_0028', 'DJI_0030', 'DJI_0028', 'DJI_0030', 'DJI_0034','DJI_0200', 'DJI_0544']
+    mid_size = [
+        'DJI_0012',
+        'DJI_0013',
+        'DJI_0014',
+        'DJI_0021',
+        'DJI_0022',
+        'DJI_0026',
+        'DJI_0028',
+        'DJI_0028',
+        'DJI_0030',
+        'DJI_0028',
+        'DJI_0030',
+        'DJI_0034',
+        'DJI_0200',
+        'DJI_0544',
+        'DJI_0463',
+        'DJI_0001',
+        'DJI_0149',
+    ]
 
     light = 'sunny'
     bird = 'stand'
@@ -42,13 +98,21 @@ def get_seq_class(seq, set):
 
     # if seq in uhd:
     #     resolution = 'uhd'
-    
+
     count = 'sparse'
-    loca = sio.loadmat(os.path.join('../../ds/dronebird/', set, 'ground_truth', 'GT_img'+str(seq[-3:])+'000.mat'))['locations']
+    loca = sio.loadmat(
+        os.path.join(
+            '../../nas-public-linkdata/ds/dronebird/',
+            set,
+            'ground_truth',
+            'GT_img' + str(seq[-3:]) + '000.mat',
+        )
+    )['locations']
     if loca.shape[0] > 150:
         count = 'crowded'
     # return light, resolution, count
     return light, angle, bird, size, count
+
 
 parser = argparse.ArgumentParser(description='Test ')
 parser.add_argument('--device', default='0', help='assign device')
@@ -70,7 +134,7 @@ args = parser.parse_args()
 os.environ['CUDA_VISIBLE_DEVICES'] = args.device  # set vis gpu
 device = torch.device('cuda')
 
-model_path = './ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_6.pth'
+model_path = '../../nas-public-linkdata/ds/result/dmc/ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_4.pth'
 crop_size = 512
 
 test_path = './preprocessed_data/test'
@@ -79,7 +143,9 @@ test_path = './preprocessed_data/test'
 # with open('../../ds/dronebird/test.json') as f:
 #     dataset = json.load(f)
 
-dataset = sorted(glob(os.path.join(test_path, '*.jpg')))
+# dataset = sorted(glob(os.path.join(test_path, '*.jpg')))
+with open("../../nas-public-linkdata/ds/dronebird/test.json") as f:
+    dataset = json.load(f)
 
 model = vgg19()
 model.to(device)
@@ -102,20 +168,28 @@ i = 0
 
 # for inputs, count, name in dataloader:
 for img_path in dataset:
-    # img_path = os.path.join('../../ds/dronebird', img_path)
+    img_path = os.path.join('../../nas-public-linkdata/ds/dronebird', img_path)
     # seq = img_path.split('/')[-3]
     seq = int(os.path.basename(img_path)[3:6])
     seq = 'DJI_' + str(seq).zfill(4)
-    light, angle, bird, size,count = get_seq_class(seq, 'test')
+    light, angle, bird, size, count = get_seq_class(seq, 'test')
     img = Image.open(img_path).convert('RGB')
     inputs = transforms.ToTensor()(img)
-    inputs = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(inputs).unsqueeze(0)
+    inputs = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(
+        inputs
+    ).unsqueeze(0)
     inputs = inputs.to(device)
 
-    gt_path = img_path.replace('jpg', 'npy')
-    gt = np.load(gt_path).shape[0]
+    gt_path = (
+        img_path.replace('images', 'ground_truth')
+        .replace('jpg', 'mat')
+        .replace('img', 'GT_img')
+    )
+    gt = sio.loadmat(gt_path)['locations'].shape[0]
+    # gt_path = img_path.replace('jpg', 'npy')
+    # gt = np.load(gt_path).shape[0]
     # count = 'crowded' if gt > 150 else 'sparse'
-    
+
     # gt_path = img_path.replace('data', 'annotation').replace('jpg', 'h5')
     # gt = np.array(h5py.File(gt_path, 'r')['density']).sum()
 
@@ -124,7 +198,7 @@ for img_path in dataset:
         outputs, _ = model(inputs)
     pred_e = torch.sum(outputs).item()
     gt_e = gt
-    img_err = abs(gt-torch.sum(outputs).item())
+    img_err = abs(gt - torch.sum(outputs).item())
     if light == 'sunny':
         preds[0].append(pred_e)
         gts[0].append(gt_e)
@@ -158,7 +232,18 @@ for img_path in dataset:
     else:
         preds[9].append(pred_e)
         gts[9].append(gt_e)
-    print('\r[{:>{}}/{}] img: {}, error: {}, gt: {}, pred: {}'.format(i, len(str(len(dataset))), len(dataset), os.path.basename(img_path), img_err, gt, torch.sum(outputs).item()), end='')
+    print(
+        '\r[{:>{}}/{}] img: {}, error: {}, gt: {}, pred: {}'.format(
+            i,
+            len(str(len(dataset))),
+            len(dataset),
+            os.path.basename(img_path),
+            img_err,
+            gt,
+            torch.sum(outputs).item(),
+        ),
+        end='',
+    )
     image_errs.append(img_err)
     i += 1
     # if args.pred_density_map_path:
@@ -174,19 +259,49 @@ image_errs = np.abs(np.array(image_errs))
 mse = np.sqrt(np.mean(np.square(image_errs)))
 mae = np.mean(np.abs(image_errs))
 with open('test.txt', 'w') as f:
-    f.write('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
-    print('{}: mae {}, mse {}, min {}, max {}\n'.format(model_path, mae, mse, np.min(image_errs), np.max(image_errs)))
+    f.write(
+        '{}: mae {}, mse {}, min {}, max {}\n'.format(
+            model_path, mae, mse, np.min(image_errs), np.max(image_errs)
+        )
+    )
+    print(
+        '{}: mae {}, mse {}, min {}, max {}\n'.format(
+            model_path, mae, mse, np.min(image_errs), np.max(image_errs)
+        )
+    )
 
-    attri = ['sunny', 'backlight','crowded', 'sparse', '60', '90', 'stand', 'fly', 'small', 'mid']
+    attri = [
+        'sunny',
+        'backlight',
+        'crowded',
+        'sparse',
+        '60',
+        '90',
+        'stand',
+        'fly',
+        'small',
+        'mid',
+    ]
     for i in range(10):
         # print(len(preds[i]))
         if len(preds[i]) == 0:
             continue
-        print('{}: MAE:{}. RMSE:{}.'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))
-        f.write('{}: MAE:{}. RMSE:{}.\n'.format(attri[i], mean_absolute_error(preds[i], gts[i]), np.sqrt(mean_squared_error(preds[i], gts[i]))))    
+        print(
+            '{}: MAE:{}. RMSE:{}.'.format(
+                attri[i],
+                mean_absolute_error(preds[i], gts[i]),
+                np.sqrt(mean_squared_error(preds[i], gts[i])),
+            )
+        )
+        f.write(
+            '{}: MAE:{}. RMSE:{}.\n'.format(
+                attri[i],
+                mean_absolute_error(preds[i], gts[i]),
+                np.sqrt(mean_squared_error(preds[i], gts[i])),
+            )
+        )
 
     # if i == 3:
     #     error = np.abs(np.array(preds[i]) - np.array(gts[i]))
     #     loss_rate = error / np.array(gts[i])
     #     print('sparse: loss_rate:{}. max:{}, min:{}.'.format(np.mean(loss_rate), np.max(loss_rate), np.min(loss_rate)))
-
