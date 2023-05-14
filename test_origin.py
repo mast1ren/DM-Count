@@ -134,7 +134,7 @@ args = parser.parse_args()
 os.environ['CUDA_VISIBLE_DEVICES'] = args.device  # set vis gpu
 device = torch.device('cuda')
 
-model_path = '../../nas-public-linkdata/ds/result/dmc/ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_4.pth'
+model_path = '../../nas-public-linkdata/ds/result/dmc/ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_2.pth'
 crop_size = 512
 
 test_path = './preprocessed_data/test'
