@@ -174,10 +174,10 @@ for img_path in dataset:
     seq = 'DJI_' + str(seq).zfill(4)
     light, angle, bird, size, count = get_seq_class(seq, 'test')
     img = Image.open(img_path).convert('RGB')
-    inputs = transforms.ToTensor()(img)
-    inputs = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(
-        inputs
-    ).unsqueeze(0)
+    inputs = transforms.ToTensor()(img).unsqueeze(0)
+    # inputs = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(
+    #     inputs
+    # ).unsqueeze(0)
     inputs = inputs.to(device)
 
     gt_path = (

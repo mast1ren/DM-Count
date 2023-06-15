@@ -4,6 +4,7 @@ import os
 import numpy as np
 import datasets.crowd as crowd
 from models import vgg19
+import scipy.io as sio
 
 parser = argparse.ArgumentParser(description='Test ')
 parser.add_argument('--device', default='0', help='assign device')
@@ -13,11 +14,14 @@ parser.add_argument(
 parser.add_argument(
     '--model-path',
     type=str,
-    default='pretrained_models/model_qnrf.pth',
+    default='../../nas-public-linkdata/ds/result/dmc/ckpts/input-512_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_2.pth',
     help='saved model path',
 )
 parser.add_argument(
-    '--data-path', type=str, default='data/QNRF-Train-Val-Test', help='saved model path'
+    '--data-path',
+    type=str,
+    default='./preprocessed_data',
+    help='saved model path',
 )
 parser.add_argument(
     '--dataset',
@@ -60,7 +64,7 @@ elif args.dataset.lower() == 'dronebird':
 else:
     raise NotImplementedError
 dataloader = torch.utils.data.DataLoader(
-    dataset, 1, shuffle=False, num_workers=1, pin_memory=True
+    dataset, 1, shuffle=False, num_workers=1, pin_memory=False
 )
 
 if args.pred_density_map_path:
@@ -177,6 +181,22 @@ model.load_state_dict(torch.load(model_path, device))
 model.eval()
 image_errs = []
 i = 0
+preds = []
+gts = []
+preds_hist = [[] for i in range(10)]
+gts_hist = [[] for i in range(10)]
+attri = [
+    "sunny",
+    "backlight",
+    "crowded",
+    "sparse",
+    "60",
+    "90",
+    "stand",
+    "fly",
+    "small",
+    "mid",
+]
 for inputs, count, name in dataloader:
     inputs = inputs.to(device)
     assert inputs.size(0) == 1, 'the batch size should equal to 1'
